@@ -2,6 +2,11 @@ name: Deploy to OVH VPS
 
 on:
   workflow_dispatch: 
+    inputs:
+      branch:
+        description: 'Branch to deploy'
+        required: true
+        default: master
   push:
     branches:
       - master
@@ -9,6 +14,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
 
     steps:
       - name: Deploy via SSH
@@ -19,7 +25,10 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script_stop: true
           script: |
-            cd /home/ubuntu/app/bookshelf
-            git pull origin master
+            TARGET_BRANCH="${{ github.event.inputs.branch || 'master' }}"
+            cd /home/ubuntu/app
+            git fetch origin
+            git checkout $TARGET_BRANCH
+            git pull origin $TARGET_BRANCH
             docker compose up -d --build
             docker image prune -f
