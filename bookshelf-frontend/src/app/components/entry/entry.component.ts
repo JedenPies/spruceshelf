@@ -1,13 +1,22 @@
-import { Component, ElementRef, inject, QueryList, signal, ViewChildren } from '@angular/core';
+import {
+  Component,
+  computed,
+  ElementRef,
+  inject,
+  QueryList,
+  signal,
+  ViewChildren,
+} from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { BackendService } from '../../services/backend.service';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { ToastService } from '../../services/toast.service';
 import { RecentSessionsService } from '../../services/recent-session.service';
+import { ScreenService } from '../../services/screen.service';
 
 @Component({
-  selector: 'app-scanner',
-  imports: [ReactiveFormsModule, FormsModule, RouterLink],
+  selector: 'app-entry',
+  imports: [ReactiveFormsModule, FormsModule],
   templateUrl: './entry.component.html',
   styleUrl: './entry.component.scss',
 })
@@ -15,12 +24,23 @@ export class EntryComponent {
   @ViewChildren('codeInput') inputs!: QueryList<ElementRef<HTMLInputElement>>;
 
   private scannerService = inject(BackendService);
-
+  screenService = inject(ScreenService);
   router = inject(Router);
   toasts = inject(ToastService);
   recentSessionsService = inject(RecentSessionsService);
 
   shareCodeDigits = signal<string[]>(['', '', '', '', '', '']);
+  pendingSessionId = signal<string | null>(null);
+
+  shouldPromptMode = computed(() => {
+    if (this.screenService.isNarrow()) {
+      return false;
+    }
+    return (
+      this.screenService.isMedium() ||
+      (this.screenService.isWide() && this.screenService.hasTouch())
+    );
+  });
 
   onInput(event: Event, index: number) {
     const input = event.target as HTMLInputElement;
@@ -84,12 +104,8 @@ export class EntryComponent {
 
   startSession() {
     this.scannerService.createSession().subscribe({
-      next: (response) => {
-        this.router.navigate(['/cataloging-session', response.id]);
-      },
-      error: (err) => {
-        this.toasts.show('Error creating cataloging session');
-      },
+      next: (response) => this.handleSessionTarget(response.id),
+      error: () => this.toasts.show('Error creating cataloging session', 'error'),
     });
   }
 
@@ -97,13 +113,38 @@ export class EntryComponent {
     const shareCode = this.shareCodeDigits().join('');
     if (shareCode) {
       this.scannerService.retrieveSessionIdByShareCode(shareCode).subscribe({
-        next: (response) => {
-          this.router.navigate(['/cataloging-session', response.sessionId]);
-        },
-        error: () => {
-          this.toasts.show('Session number could not be retrieved', 'error');
-        },
+        next: (response) => this.handleSessionTarget(response.sessionId),
+        error: () => this.toasts.show('Session number could not be retrieved', 'error'),
       });
     }
+  }
+
+  handleRecentSessionClick(sessionId: string) {
+    this.handleSessionTarget(sessionId);
+  }
+
+  private handleSessionTarget(sessionId: string) {
+    if (this.screenService.isNarrow()) {
+      this.router.navigate(['/cataloging-session', sessionId, 'scanner']);
+    } else if (this.shouldPromptMode()) {
+      this.pendingSessionId.set(sessionId);
+    } else {
+      this.router.navigate(['/cataloging-session', sessionId]);
+    }
+  }
+
+  navigateToSession(mode: 'scanner' | 'table') {
+    const sessionId = this.pendingSessionId();
+    if (!sessionId) return;
+
+    if (mode === 'scanner') {
+      this.router.navigate(['/cataloging-session', sessionId, 'scanner']);
+    } else {
+      this.router.navigate(['/cataloging-session', sessionId]);
+    }
+  }
+
+  cancelChoice() {
+    this.pendingSessionId.set(null);
   }
 }
