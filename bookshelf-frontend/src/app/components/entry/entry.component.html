@@ -9,113 +9,163 @@
       </p>
     </header>
 
-    <!-- MAIN ACTION CARDS -->
-    <div class="cards-wrapper">
+    @if (!pendingSessionId()) {
+      <div class="cards-wrapper">
 
-      <!-- LEFT CARD: New session -->
-      <div class="action-card">
-        <div class="card-icon">
-          <svg class="card-icon-svg"><use href="/icons/icons.svg#session-new"></use></svg>
-        </div>
-        <h2>Start New Session</h2>
-        <p>
-          Launch a fresh cataloging workspace to scan barcodes with your mobile camera or enter ISBNs manually.
-        </p>
-
-        <button class="btn-primary btn-large" (click)="startSession()">
-          Start Session
-        </button>
-      </div>
-
-      <!-- SEPARATOR -->
-      <div class="divider">
-        <span>OR</span>
-      </div>
-
-      <!-- RIGHT CARD: Connect desktop -->
-      <div class="action-card">
-        <div class="card-icon">
-          <svg class="card-icon-svg"><use href="/icons/icons.svg#session-connect"></use></svg>
-        </div>
-        <h2>Join Existing Session</h2>
-        <p>
-          Enter the 6-character entry code from existing session to join, monitor and edit your catalog live on desktop.
-        </p>
-
-        <div class="inputs-container">
-          @for (digit of shareCodeDigits(); track $index) {
-            <input
-              #codeInput
-              type="text"
-              inputmode="text"
-              maxlength="1"
-              [value]="digit"
-              (input)="onInput($event, $index)"
-              (keydown)="onKeyDown($event, $index)"
-              (paste)="onPaste($event)"
-              class="code-input"
-              placeholder="-"
-            />
-          }
-        </div>
-      </div>
-
-    </div>
-
-    <!-- SECTION: RECENT SESSIONS -->
-    @if (recentSessionsService.recentSessions().length > 0) {
-      <div class="divider horizontal"><span>OR</span></div>
-
-      <div class="recent-sessions-card">
-        <div class="recent-header">
-          <div class="recent-title-group">
-            <h3>Your Recent Sessions</h3>
-            <span class="recent-count">{{ recentSessionsService.recentSessions().length }} / 5</span>
+        <div class="action-card">
+          <div class="card-icon">
+            <svg class="card-icon-svg"><use href="/icons/icons.svg#session-new"></use></svg>
           </div>
-          <p class="recent-hint">Resume working on one of your previous cataloging workspaces</p>
+          <h2>Start New Session</h2>
+          <p>
+            @if (screenService.isNarrow()) {
+              Launch a new session to immediately start scanning barcodes with your phone camera.
+            } @else if (shouldPromptMode()) {
+              Start a new session and choose whether to scan barcodes or manage books in the workspace table.
+            } @else {
+              Launch a fresh cataloging workspace to manage your books, review incoming scans, and export data in a live table.
+            }
+          </p>
+
+          <button class="btn-primary btn-large" (click)="startSession()">
+            Start Session
+          </button>
         </div>
 
-        <div class="recent-table-wrapper">
-          <table class="recent-table">
-            <thead>
-            <tr>
-              <th class="col-id">Session ID</th>
-              <th class="col-name">Name</th>
-              <th class="col-created">Created at</th>
-              <th class="col-count">Draft books</th>
-              <th class="col-actions"></th>
-            </tr>
-            </thead>
-            <tbody>
-              @for (session of recentSessionsService.recentSessions(); track session.id) {
-                <tr class="recent-row" [routerLink]="['/cataloging-session', session.id]">
-                  <td class="col-id">
-                    <span class="badge session-id-badge">{{ session.id.substring(0, 8) }}</span>
-                  </td>
-                  <td class="col-name">
-                    <span class="session-name">{{ session.name }}</span>
-                  </td>
-                  <td class="col-created">
-                    <span class="text-muted">{{ session.createdAt }}</span>
-                  </td>
-                  <td class="col-count">
-                    <span class="badge count-badge">{{ session.draftCount ?? 0 }}</span>
-                  </td>
-                  <td class="col-actions" (click)="$event.stopPropagation()">
-                    <button
-                      type="button"
-                      class="btn-close"
-                      (click)="recentSessionsService.removeSession(session.id)"
-                      title="Remove from history"
-                    >
-                      ✕
-                    </button>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
+        <div class="divider">
+          <span>OR</span>
         </div>
+
+        <div class="action-card">
+          <div class="card-icon">
+            <svg class="card-icon-svg"><use href="/icons/icons.svg#session-connect"></use></svg>
+          </div>
+          <h2>Join Existing Session</h2>
+          <p>
+            @if (screenService.isNarrow()) {
+              Enter the 6-character code to connect your phone and start scanning books into this session.
+            } @else if (shouldPromptMode()) {
+              Enter the 6-character code to join this session as a wireless scanner or open the workspace table.
+            } @else {
+              Enter the 6-character code to join the session and manage your catalog table live on desktop.
+            }
+          </p>
+
+          <div class="inputs-container">
+            @for (digit of shareCodeDigits(); track $index) {
+              <input
+                #codeInput
+                type="text"
+                inputmode="text"
+                maxlength="1"
+                [value]="digit"
+                (input)="onInput($event, $index)"
+                (keydown)="onKeyDown($event, $index)"
+                (paste)="onPaste($event)"
+                class="code-input"
+                placeholder="-"
+              />
+            }
+          </div>
+        </div>
+
+      </div>
+
+      @if (!screenService.isNarrow() && recentSessionsService.recentSessions().length > 0) {
+        <div class="divider horizontal"><span>OR</span></div>
+
+        <div class="recent-sessions-card">
+          <div class="recent-header">
+            <div class="recent-title-group">
+              <h3>Your Recent Sessions</h3>
+              <span class="recent-count">{{ recentSessionsService.recentSessions().length }} / 5</span>
+            </div>
+            <p class="recent-hint">Resume working on one of your previous cataloging workspaces</p>
+          </div>
+
+          <div class="recent-table-wrapper">
+            <table class="recent-table">
+              <thead>
+              <tr>
+                <th class="col-id">Session ID</th>
+                <th class="col-name">Name</th>
+                <th class="col-created">Created at</th>
+                <th class="col-count">Draft books</th>
+                <th class="col-actions"></th>
+              </tr>
+              </thead>
+              <tbody>
+                @for (session of recentSessionsService.recentSessions(); track session.id) {
+                  <tr class="recent-row" (click)="handleRecentSessionClick(session.id)">
+                    <td class="col-id">
+                      <span class="badge session-id-badge">{{ session.id.substring(0, 8) }}</span>
+                    </td>
+                    <td class="col-name">
+                      <span class="session-name">{{ session.name }}</span>
+                    </td>
+                    <td class="col-created">
+                      <span class="text-muted">{{ session.createdAt }}</span>
+                    </td>
+                    <td class="col-count">
+                      <span class="badge count-badge">{{ session.draftCount ?? 0 }}</span>
+                    </td>
+                    <td class="col-actions" (click)="$event.stopPropagation()">
+                      <button
+                        type="button"
+                        class="btn-close"
+                        (click)="recentSessionsService.removeSession(session.id)"
+                        title="Remove from history"
+                      >
+                        ✕
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+
+    } @else {
+      <div class="mode-select-container">
+        <div class="cards-wrapper">
+
+          <div class="action-card mode-card" (click)="navigateToSession('scanner')">
+            <div class="card-icon">
+              <svg class="card-icon-svg"><use href="/icons/icons.svg#barcode"></use></svg>
+            </div>
+            <h2>Barcode Scanner</h2>
+            <p>
+              Use camera to scan barcodes directly into this session.
+            </p>
+            <button class="btn-primary btn-large">
+              Open Scanner
+            </button>
+          </div>
+
+          <div class="divider">
+            <span>OR</span>
+          </div>
+
+          <div class="action-card mode-card" (click)="navigateToSession('table')">
+            <div class="card-icon">
+              <svg class="card-icon-svg"><use href="/icons/icons.svg#session-connect"></use></svg>
+            </div>
+            <h2>Workspace Table</h2>
+            <p>
+              Open the cataloging desk to review books and edit metadata.
+            </p>
+            <button class="btn-secondary btn-large">
+              Open Table
+            </button>
+          </div>
+
+        </div>
+
+        <button type="button" class="btn-cancel" (click)="cancelChoice()">
+          ← Back to start
+        </button>
       </div>
     }
 
