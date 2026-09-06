@@ -26,7 +26,7 @@ jobs:
           script_stop: true
           script: |
             TARGET_BRANCH="${{ github.event.inputs.branch || 'master' }}"
-            cd /home/ubuntu/app
+            cd /home/ubuntu/app/bookshelf
             git fetch origin
             git checkout $TARGET_BRANCH
             git pull origin $TARGET_BRANCH
