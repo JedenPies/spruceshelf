@@ -74,7 +74,7 @@ export class CatalogingSessionComponent {
     this.exportService.loadExport(this.sessionId());
     this.initSseStream();
     this.scannerUrl.set(
-      window.location.protocol + '//' + window.location.host + '/scanner/' + this.sessionId(),
+      window.location.protocol + '//' + window.location.host + '/cataloging-session/' + this.sessionId() + '/scanner',
     );
     this.generateShareCode();
     this.recentSessionsService.addSession(this.sessionId(), this.draftBooks().length);

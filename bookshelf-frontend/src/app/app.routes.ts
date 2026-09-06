@@ -6,11 +6,17 @@ export const routes: Routes = [
     loadComponent: () => import('./components/entry/entry.component').then((m) => m.EntryComponent),
   },
   {
-    path: 'scanner/:sessionId',
-    loadComponent: () => import('./components/scanner/scanner.component').then((m) => m.ScannerComponent),
+    path: 'cataloging-session/:sessionId',
+    loadComponent: () =>
+      import('./components/cataloging-session/cataloging-session.component').then(
+        (m) => m.CatalogingSessionComponent,
+      ),
   },
   {
-    path: 'cataloging-session/:sessionId',
-    loadComponent: () => import('./components/cataloging-session/cataloging-session.component').then((m) => m.CatalogingSessionComponent),
-  }
+    path: 'cataloging-session/:sessionId/scanner',
+    loadComponent: () =>
+      import('./components/cataloging-session/scanner/scanner.component').then(
+        (m) => m.ScannerComponent,
+      ),
+  },
 ];

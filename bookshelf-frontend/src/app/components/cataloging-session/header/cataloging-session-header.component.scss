@@ -137,8 +137,8 @@
     gap: 4px;
   }
 
-  // Przy szerokości poniżej 1100px (gdy guziki przestają mieścić się obok tytułu)
-  @media (max-width: 1400px) {
+  // Przy szerokości poniżej 1510px (gdy guziki przestają mieścić się obok tytułu)
+  @media (max-width: 1510px) {
     padding: 0;
     width: 40px;
     height: 40px;

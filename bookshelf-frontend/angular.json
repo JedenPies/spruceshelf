@@ -59,7 +59,7 @@
         },
         "serve": {
           "options": {
-            "allowedHosts": [ "bs.lan", "bs.patrykdobrowolski.net" ]
+            "allowedHosts": [ "all"]
           },
           "builder": "@angular/build:dev-server",
           "configurations": {
