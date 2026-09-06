@@ -1,14 +1,10 @@
 name: Sync master back to develop
 
 on:
-  workflow_dispatch: 
+  workflow_dispatch:
   push:
     branches:
       - master
-
-# Wymagane uprawnienia, by GITHUB_TOKEN mógł wypchnąć zmiany do repozytorium
-permissions:
-  contents: write
 
 jobs:
   sync-branches:
@@ -19,7 +15,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: develop
-          fetch-depth: 0 # Pobiera pełną historię, niezbędną do poprawnego merge'a
+          fetch-depth: 0
+          # Przekazujemy Twój token – akcja zapamięta go w konfiguracji gita:
+          token: ${{ secrets.SYNC_TOKEN }}
 
       - name: Configure Git
         run: |
