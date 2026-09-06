@@ -150,3 +150,8 @@
     }
   }
 }
+
+.header-breadcrumbs .home-link h2 {
+  view-transition-name: main-brand-title;
+  /* Twoje dotychczasowe style dla mniejszego h2 w headerze */
+}

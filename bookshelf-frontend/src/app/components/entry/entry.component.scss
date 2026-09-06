@@ -40,6 +40,7 @@ $card-radius: 12px;
   container-type: inline-size;
 
   .main-title {
+    view-transition-name: main-brand-title;
     margin: 0;
     color: #0f172a;
     font-family: "Courier Prime", "Special Elite", "SFMono-Regular", Consolas, monospace;
@@ -344,7 +345,7 @@ $card-radius: 12px;
 
       .btn-close {
         height: 28px;
-        padding: 0 8px;
+        padding: 6px;
         line-height: 1;
         background: transparent;
         border: none;
