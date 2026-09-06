@@ -1,0 +1,32 @@
+name: Sync master back to develop
+
+on:
+  push:
+    branches:
+      - master
+
+# Wymagane uprawnienia, by GITHUB_TOKEN mógł wypchnąć zmiany do repozytorium
+permissions:
+  contents: write
+
+jobs:
+  sync-branches:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout develop branch
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 0 # Pobiera pełną historię, niezbędną do poprawnego merge'a
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Merge master into develop
+        run: |
+          git fetch origin master:master
+          git merge master --no-ff -m "chore(gitflow): merge master back to develop [skip ci]"
+          git push origin develop
