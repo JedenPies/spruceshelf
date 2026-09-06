@@ -1,7 +1,7 @@
 import { Component, inject, input, signal } from '@angular/core';
 import { ZXingScannerModule } from '@zxing/ngx-scanner';
 import { BarcodeFormat } from '@zxing/library';
-import { BackendService } from '../../services/backend.service';
+import { BackendService } from '../../../services/backend.service';
 
 @Component({
   selector: 'app-scanner',
