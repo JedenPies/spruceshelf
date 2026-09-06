@@ -430,3 +430,14 @@ input.invalid {
   background-color: #fef2f2;
 }
 
+::view-transition-group(main-brand-title) {
+  animation-duration: 0.35s;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Zapobiega miganiu tekstu przy podmianie (cross-fade czcionki) */
+::view-transition-old(main-brand-title),
+::view-transition-new(main-brand-title) {
+  height: 100%;
+}
+
