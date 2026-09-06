@@ -8,7 +8,7 @@ $card-radius: 12px;
   display: flex;
   justify-content: center;
   align-items: flex-start; /* Przestaje centrować pionowo */
-  min-height: 100vh;
+  min-height: calc(100vh - 20px);
   padding: 0;
   box-sizing: border-box;
 }

@@ -10,6 +10,7 @@ services:
     volumes:
       - ./.config/bookshelf-api-gateway/nginx:/etc/nginx/conf.d:ro
       - ./.config/bookshelf-api-gateway/letsencrypt:/etc/letsencrypt:ro # <-- Podmontowanie certyfikatów
+      - ./.config/bookshelf-api-gateway/certbot-webroot:/var/www/certbot:ro
     ports:
       - "80:80"
       - "443:443"
@@ -24,7 +25,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_BOOKSHELF_PASSWORD}
       POSTGRES_DB: ${POSTGRES_BOOKSHELF_DATABASE}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - bookshelf-pg-data:/var/lib/postgresql/data
     networks:
@@ -34,7 +35,7 @@ services:
     image: redis:alpine
     container_name: bookshelf-redis
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     restart: unless-stopped
     networks:
       - bookshelf-network
@@ -44,8 +45,8 @@ services:
     container_name: bookshelf-rabbitmq
     hostname: rabbitmq-node
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     environment:
