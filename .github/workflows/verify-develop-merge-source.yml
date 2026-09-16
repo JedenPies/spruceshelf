@@ -16,7 +16,7 @@ jobs:
           SOURCE_BRANCH="${{ github.head_ref }}"
           echo "Gałąź źródłowa: $SOURCE_BRANCH"
                     
-          if [[ "$SOURCE_BRANCH" =~ ^(feature\/[a-zA-Z0-9._-]+)$|bugfix\/[a-zA-Z0-9._-]+)$ ]]; then
+          if [[ "$SOURCE_BRANCH" =~ ^(master|(feature|bugfix)\/[a-zA-Z0-9._-]+)$ ]]; then
             echo "Gałąź źródłowa spełnia wymogi GitFlow."
             exit 0
           else
