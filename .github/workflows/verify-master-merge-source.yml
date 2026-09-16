@@ -8,7 +8,7 @@ on:
 
 jobs:
   validate-source-branch:
-    name: Check PR Source Branch
+    name: Allow only develop and hotfix/* branches as merge source
     runs-on: ubuntu-latest
     steps:
       - name: Validate branch name
