@@ -1,0 +1,26 @@
+name: Verify Master PR Source
+
+on:
+  pull_request:
+    branches:
+      - develop
+    types: [opened, reopened, synchronize]
+
+jobs:
+  validate-source-branch:
+    name: Allow only feature/* and bugfix/* branches as merge source
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate branch name
+        run: |
+          SOURCE_BRANCH="${{ github.head_ref }}"
+          echo "Gałąź źródłowa: $SOURCE_BRANCH"
+                    
+          if [[ "$SOURCE_BRANCH" =~ ^(feature\/[a-zA-Z0-9._-]+)$|bugfix\/[a-zA-Z0-9._-]+)$ ]]; then
+            echo "Gałąź źródłowa spełnia wymogi GitFlow."
+            exit 0
+          else
+            echo "::error::Zabroniony merge do developa z gałęzi '$SOURCE_BRANCH'!"
+            echo "Dozwolone źródła zmian dla developa to wyłącznie 'feature/*' lub 'bugfix/*'."
+            exit 1
+          fi
