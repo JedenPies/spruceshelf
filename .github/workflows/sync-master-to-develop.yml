@@ -9,20 +9,30 @@ on:
 jobs:
   sync-branches:
     runs-on: ubuntu-latest
+    permissions: 
+      contents: write
 
     steps:
+      - name: Generate Token For Antek
+        id: antek_token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.ANTEK_APP_ID }}
+          private-key: ${{ secrets.ANTEK_PRIVATE_KEY }}
+    
       - name: Checkout develop branch
         uses: actions/checkout@v4
         with:
           ref: develop
-          fetch-depth: 0
-          # Przekazujemy Twój token – akcja zapamięta go w konfiguracji gita:
-          token: ${{ secrets.SYNC_TOKEN }}
+          fetch-depth: 0          
+          token: ${{ steps.antek_token.outputs.token }}
 
-      - name: Configure Git
+      - name: Configure Git & Auth
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "Antek"
+          git config user.email "antek@users.noreply.github.com"
+          # Ustawienie nagłówka autoryzacji bezpośrednio dla GitHuba:
+          git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(echo -n "x-access-token:${{ steps.antek_token.outputs.token }}" | base64)"
 
       - name: Merge master into develop
         run: |
