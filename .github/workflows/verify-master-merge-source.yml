@@ -1,0 +1,27 @@
+name: Verify Master PR Source
+
+on:
+  pull_request:
+    branches:
+      - master
+    types: [opened, reopened, synchronize]
+
+jobs:
+  validate-source-branch:
+    name: Check PR Source Branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate branch name
+        run: |
+          SOURCE_BRANCH="${{ github.head_ref }}"
+          echo "Gałąź źródłowa: $SOURCE_BRANCH"
+          
+          # Akceptujemy tylko 'develop' lub gałęzie zaczynające się od 'hotfix/'
+          if [[ "$SOURCE_BRANCH" =~ ^(develop|hotfix\/[a-zA-Z0-9._-]+)$ ]]; then
+            echo "Gałąź źródłowa spełnia wymogi GitFlow."
+            exit 0
+          else
+            echo "::error::Zabroniony merge do mastera z gałęzi '$SOURCE_BRANCH'!"
+            echo "Dozwolone źródła zmian dla mastera to wyłącznie 'develop' lub 'hotfix/*'."
+            exit 1
+          fi
