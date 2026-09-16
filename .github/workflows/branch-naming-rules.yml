@@ -1,0 +1,23 @@
+name: Branch Naming Rules
+
+on:
+  push:
+    branches-ignore:
+      - master
+      - develop
+
+jobs:
+  check-branch-name:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch naming convention
+        run: |
+          BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+          REGEX="^(feature|bugfix|hotfix|release)\/[a-zA-Z0-9._-]+$"
+          
+          if [[ ! "$BRANCH_NAME" =~ $REGEX ]]; then
+            echo "::error::Nieprawidłowa nazwa gałęzi: '$BRANCH_NAME'!"
+            echo "Wymagany format: feature/*, bugfix/*, hotfix/* lub release/*"
+            exit 1
+          fi
+          echo "Nazwa brancha '$BRANCH_NAME' jest poprawna."
