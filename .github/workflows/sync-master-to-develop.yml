@@ -9,7 +9,7 @@ on:
 jobs:
   sync-branches:
     runs-on: ubuntu-latest
-    permissions: 
+    permissions:
       contents: write
 
     steps:
@@ -19,20 +19,18 @@ jobs:
         with:
           app-id: ${{ vars.ANTEK_APP_ID }}
           private-key: ${{ secrets.ANTEK_PRIVATE_KEY }}
-    
+
       - name: Checkout develop branch
         uses: actions/checkout@v4
         with:
           ref: develop
-          fetch-depth: 0          
+          fetch-depth: 0
           token: ${{ steps.antek_token.outputs.token }}
 
-      - name: Configure Git & Auth
+      - name: Configure Git
         run: |
           git config user.name "Antek"
           git config user.email "antek@users.noreply.github.com"
-          # Ustawienie nagłówka autoryzacji bezpośrednio dla GitHuba:
-          git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(echo -n "x-access-token:${{ steps.antek_token.outputs.token }}" | base64)"
 
       - name: Merge master into develop
         run: |
