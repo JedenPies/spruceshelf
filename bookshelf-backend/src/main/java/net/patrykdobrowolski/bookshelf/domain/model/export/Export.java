@@ -27,7 +27,7 @@ public class Export extends AggregateRoot {
     private Instant createdAt;
     private Instant modifiedAt;
 
-    public Export(UUID id, ExportFormat format, ExportStatus status, ExportType type, UUID correlationKey, byte[] data, Instant createdAt, Instant modifiedAt) {
+    private Export(UUID id, ExportFormat format, ExportStatus status, ExportType type, UUID correlationKey, byte[] data, Instant createdAt, Instant modifiedAt) {
         this.id = id;
         this.format = format;
         this.status = status;
