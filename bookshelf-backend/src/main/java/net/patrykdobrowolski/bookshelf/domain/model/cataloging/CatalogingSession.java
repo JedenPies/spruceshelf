@@ -3,8 +3,11 @@ package net.patrykdobrowolski.bookshelf.domain.model.cataloging;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import net.patrykdobrowolski.bookshelf.domain.Aggregate;
+import net.patrykdobrowolski.bookshelf.domain.AggregateRoot;
 import net.patrykdobrowolski.bookshelf.domain.exception.DraftBookNotFoundException;
+import net.patrykdobrowolski.bookshelf.domain.model.event.DraftBookCreatedEvent;
+import net.patrykdobrowolski.bookshelf.domain.model.event.DraftBookUpdatedEvent;
+import net.patrykdobrowolski.bookshelf.domain.model.event.DraftBooksDeletedEvent;
 import net.patrykdobrowolski.bookshelf.domain.model.value.BookDetails;
 import net.patrykdobrowolski.bookshelf.domain.model.value.ISBN;
 import net.patrykdobrowolski.bookshelf.domain.model.value.Modifier;
@@ -19,7 +22,7 @@ import java.util.UUID;
 
 @Builder @AllArgsConstructor(access = lombok.AccessLevel.PRIVATE)
 @Getter
-public class CatalogingSession extends Aggregate {
+public class CatalogingSession extends AggregateRoot {
 
     private UUID id;
     private Instant createdAt;
@@ -47,43 +50,48 @@ public class CatalogingSession extends Aggregate {
         DraftBook foundDraftBook = findOldestDraftBookByIsbn(isbn);
         Optional.ofNullable(foundDraftBook).ifPresent(newDraftBook::copyDetails);
         draftBooks.add(newDraftBook);
+        registerEvent(DraftBookCreatedEvent.of(this, newDraftBook));
         return newDraftBook;
     }
 
-    public List<DraftBook> removeDraftBooks(List<UUID> draftBooksIds) {
+    public void removeDraftBooks(List<UUID> draftBooksIds) {
         touch();
         List<DraftBook> draftBooks = this.draftBooks.stream().filter(draftBook -> draftBooksIds.contains(draftBook.getId())).toList();
         draftBooks.forEach(this.draftBooks::remove);
-        return draftBooks;
+        registerEvent(DraftBooksDeletedEvent.of(this, draftBooks));
     }
 
     public DraftBook updateDraftBook(UUID draftBookId, BookDetails newDetails) throws DraftBookNotFoundException {
         touch();
         DraftBook draftBook = findDraftBookById(draftBookId);
         draftBook.setBookDetails(newDetails.withSources(draftBook.getBookDetails().sources()), Modifier.USER);
+        registerEvent(DraftBookUpdatedEvent.of(this, draftBook));
         return draftBook;
     }
 
-    public DraftBook markDraftBookFetching(UUID draftBookId) throws DraftBookNotFoundException {
+    public void markDraftBookFetching(UUID draftBookId) throws DraftBookNotFoundException {
         touch();
         DraftBook draftBook = findDraftBookById(draftBookId);
         draftBook.markFetching();
-        return draftBook;
+        registerEvent(DraftBookUpdatedEvent.of(this, draftBook));
     }
 
     public void markDraftBookFailed(UUID draftBookId) throws DraftBookNotFoundException {
         touch();
         findDraftBookById(draftBookId).markFailed();
+        registerEvent(DraftBookUpdatedEvent.of(this, findDraftBookById(draftBookId)));
     }
 
     public void markDraftBookNotFound(UUID draftBookId) throws DraftBookNotFoundException {
         touch();
         findDraftBookById(draftBookId).markNotFound();
+        registerEvent(DraftBookUpdatedEvent.of(this, findDraftBookById(draftBookId)));
     }
 
     public void setDraftBookBookDetails(UUID draftBookId, BookDetails details, Modifier modifier) throws DraftBookNotFoundException {
         touch();
         findDraftBookById(draftBookId).setBookDetails(details, modifier);
+        registerEvent(DraftBookUpdatedEvent.of(this, findDraftBookById(draftBookId)));
     }
 
     private DraftBook findOldestDraftBookByIsbn(ISBN isbn) {

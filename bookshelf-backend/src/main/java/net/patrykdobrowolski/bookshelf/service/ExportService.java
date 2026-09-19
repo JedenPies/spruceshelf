@@ -3,10 +3,8 @@ package net.patrykdobrowolski.bookshelf.service;
 import jakarta.inject.Named;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import net.patrykdobrowolski.bookshelf.domain.exception.ExportAlreadyRequestedException;
-import net.patrykdobrowolski.bookshelf.domain.exception.ExportNotFoundException;
+import net.patrykdobrowolski.bookshelf.domain.exception.ExportException;
 import net.patrykdobrowolski.bookshelf.domain.model.command.ExportCommand;
-import net.patrykdobrowolski.bookshelf.domain.model.event.ExportRequestedEvent;
 import net.patrykdobrowolski.bookshelf.domain.model.export.Export;
 import net.patrykdobrowolski.bookshelf.domain.model.value.ExportType;
 import net.patrykdobrowolski.bookshelf.domain.port.ExportRepositoryPort;
@@ -25,40 +23,42 @@ public class ExportService implements ExportServicePort {
 
     @Transactional
     @Override
-    public Export requestExport(ExportCommand command) throws ExportAlreadyRequestedException, ExportNotFoundException {
+    public Export requestExport(ExportCommand command) throws ExportException.ExportAlreadyRequestedException, ExportException.ExportNotFoundException {
         Optional<Export> existingExport = exportRepository.findByTypeAndCorrelationKey(command.getType(), command.getCorrelationKey());
         if (existingExport.isPresent()) {
-            if (!existingExport.get().isComplete()) throw new ExportAlreadyRequestedException();
+            if (!existingExport.get().isComplete()) throw new ExportException.ExportAlreadyRequestedException();
         }
-        Export export = existingExport.map(e -> e.reset(command)).orElseGet(() -> Export.createNew(command));
-        exportRepository.save(export);
-        eventPublisher.publishEvent(ExportRequestedEvent.of(export));
-        return export;
-    }
-
-    @Transactional
-    @Override
-    public Export beginExport(UUID exportId) throws ExportNotFoundException {
-        Export export = exportRepository.findById(exportId);
-        export.begin();
+        Export export = existingExport.orElseGet(() -> Export.createNew(command));
+        export.request(command);
+        export.publishEvents(eventPublisher::publishEvent);
         return exportRepository.save(export);
     }
 
     @Transactional
     @Override
-    public Export findExport(UUID exportId) throws ExportNotFoundException {
+    public Export beginExport(UUID exportId) throws ExportException.ExportNotFoundException {
+        Export export = exportRepository.findById(exportId);
+        export.begin();
+        export.publishEvents(eventPublisher::publishEvent);
+        return exportRepository.save(export);
+    }
+
+    @Transactional
+    @Override
+    public Export findExport(UUID exportId) throws ExportException.ExportNotFoundException {
         return exportRepository.findById(exportId);
     }
 
     @Transactional
     @Override
-    public Export findForCatalogingSession(UUID sessionId) throws ExportNotFoundException {
-        return exportRepository.findByTypeAndCorrelationKey(ExportType.CATALOGING_SESSION, sessionId).orElseThrow(ExportNotFoundException::new);
+    public Export findForCatalogingSession(UUID sessionId) throws ExportException.ExportNotFoundException {
+        return exportRepository.findByTypeAndCorrelationKey(ExportType.CATALOGING_SESSION, sessionId).orElseThrow(ExportException.ExportNotFoundException::new);
     }
 
     @Transactional
     @Override
     public Export save(Export export) {
+        export.publishEvents(eventPublisher::publishEvent);
         return exportRepository.save(export);
     }
 }

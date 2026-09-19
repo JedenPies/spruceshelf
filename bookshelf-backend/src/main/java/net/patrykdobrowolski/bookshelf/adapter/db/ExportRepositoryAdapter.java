@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import net.patrykdobrowolski.bookshelf.adapter.db.entity.ExportEntity;
 import net.patrykdobrowolski.bookshelf.adapter.db.mapper.ExportEntityMapper;
 import net.patrykdobrowolski.bookshelf.adapter.db.repository.SpringDataExportRepository;
-import net.patrykdobrowolski.bookshelf.domain.exception.ExportNotFoundException;
+import net.patrykdobrowolski.bookshelf.domain.exception.ExportException;
 import net.patrykdobrowolski.bookshelf.domain.model.export.Export;
 import net.patrykdobrowolski.bookshelf.domain.model.value.ExportType;
 import net.patrykdobrowolski.bookshelf.domain.port.ExportRepositoryPort;
@@ -21,8 +21,8 @@ public class ExportRepositoryAdapter implements ExportRepositoryPort  {
     private final ExportEntityMapper exportEntityMapper;
 
     @Override
-    public Export findById(UUID id) throws ExportNotFoundException {
-        ExportEntity found = exportRepository.findById(id).orElseThrow(ExportNotFoundException::new);
+    public Export findById(UUID id) throws ExportException.ExportNotFoundException {
+        ExportEntity found = exportRepository.findById(id).orElseThrow(ExportException.ExportNotFoundException::new);
         return exportEntityMapper.fromEntity(found);
     }
 

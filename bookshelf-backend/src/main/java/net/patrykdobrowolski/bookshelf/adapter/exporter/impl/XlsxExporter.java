@@ -1,6 +1,10 @@
-package net.patrykdobrowolski.bookshelf.adapter.exporter;
+package net.patrykdobrowolski.bookshelf.adapter.exporter.impl;
 
 import jakarta.inject.Named;
+import net.patrykdobrowolski.bookshelf.adapter.exporter.ExportData;
+import net.patrykdobrowolski.bookshelf.adapter.exporter.ExportResult;
+import net.patrykdobrowolski.bookshelf.adapter.exporter.Exporter;
+import net.patrykdobrowolski.bookshelf.domain.exception.ExportException;
 import net.patrykdobrowolski.bookshelf.domain.model.value.ExportFormat;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -21,7 +25,7 @@ public class XlsxExporter implements Exporter {
     }
 
     @Override
-    public ExportResult export(ExportData exportData) throws ExportFailedException {
+    public ExportResult export(ExportData exportData) throws ExportException.ExportFailedException {
 
         try (
                 Workbook workbook = new XSSFWorkbook();
@@ -57,10 +61,10 @@ public class XlsxExporter implements Exporter {
 
             // 5. Zapis do strumienia i zwrot jako tablica bajtów
             workbook.write(out);
-            return new ExportResult(out.toByteArray());
+            return ExportResult.of(out.toByteArray());
 
         } catch (Exception e) {
-            throw new ExportFailedException("XLSX export failed", e);
+            throw new ExportException.ExportFailedException("XLSX export failed", e);
         }
     }
 }
