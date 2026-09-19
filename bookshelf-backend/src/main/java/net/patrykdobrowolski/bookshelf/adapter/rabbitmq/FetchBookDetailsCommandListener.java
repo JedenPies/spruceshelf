@@ -33,6 +33,7 @@ public class FetchBookDetailsCommandListener {
     public void handleFetchBookDetailsCommand(FetchBookDetailsCommandDto command) {
         try {
             command.tried();
+            fetchBookService.startFetchingBook(command.getSessionId(), command.getDraftBookId());
             DraftBookStatus draftBookStatus = fetchBookService.fetchBookForDraft(command.getSessionId(), command.getDraftBookId(), command.getTryCount() >= 3);
             if (draftBookStatus == DraftBookStatus.FETCHING) retry(command);
         } catch (DraftBookNotFoundException e) {

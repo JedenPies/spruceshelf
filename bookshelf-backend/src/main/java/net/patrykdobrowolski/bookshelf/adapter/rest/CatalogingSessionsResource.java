@@ -8,8 +8,7 @@ import net.patrykdobrowolski.bookshelf.adapter.rest.mapper.CatalogingSessionDtoM
 import net.patrykdobrowolski.bookshelf.adapter.rest.mapper.ExportDtoMapper;
 import net.patrykdobrowolski.bookshelf.adapter.sse.SseCatalogingSessionService;
 import net.patrykdobrowolski.bookshelf.domain.exception.CatalogingSessionNotFoundException;
-import net.patrykdobrowolski.bookshelf.domain.exception.ExportAlreadyRequestedException;
-import net.patrykdobrowolski.bookshelf.domain.exception.ExportNotFoundException;
+import net.patrykdobrowolski.bookshelf.domain.exception.ExportException;
 import net.patrykdobrowolski.bookshelf.domain.model.cataloging.CatalogingSession;
 import net.patrykdobrowolski.bookshelf.domain.model.export.Export;
 import net.patrykdobrowolski.bookshelf.domain.model.value.ExportType;
@@ -47,7 +46,7 @@ public class CatalogingSessionsResource {
     }
 
     @GetMapping("/{sessionId}/export")
-    public ExportDto getSession(@PathVariable UUID sessionId) throws CatalogingSessionNotFoundException, ExportNotFoundException {
+    public ExportDto getSession(@PathVariable UUID sessionId) throws CatalogingSessionNotFoundException, ExportException.ExportNotFoundException {
         sessionService.ensureSessionExists(sessionId);
         Export found = exportService.findForCatalogingSession(sessionId);
         return exportDtoMapper.map(found);
@@ -61,7 +60,7 @@ public class CatalogingSessionsResource {
     @PutMapping("/{sessionId}/export-request")
     @ResponseStatus(HttpStatus.CREATED)
     public ExportDto createNewExportRequest(
-            @PathVariable UUID sessionId, @RequestBody ExportRequestDto exportDto) throws ExportAlreadyRequestedException, CatalogingSessionNotFoundException, ExportNotFoundException {
+            @PathVariable UUID sessionId, @RequestBody ExportRequestDto exportDto) throws ExportException.ExportAlreadyRequestedException, CatalogingSessionNotFoundException, ExportException.ExportNotFoundException {
         sessionService.ensureSessionExists(sessionId);
         Export export = exportService.requestExport(
                 exportDtoMapper.map(exportDto).withType(ExportType.CATALOGING_SESSION).withCorrelationKey(sessionId));
