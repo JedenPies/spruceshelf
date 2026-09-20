@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   bookshelf-api-gateway:
     build:
@@ -92,3 +90,8 @@ networks:
     external: true
   app-network:
     driver: bridge
+
+volumes:
+  bookshelf-pg-data:
+  rabbitmq-data:
+  redis-data:
