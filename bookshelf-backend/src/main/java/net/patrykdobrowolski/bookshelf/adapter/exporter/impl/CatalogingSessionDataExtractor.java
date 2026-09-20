@@ -1,8 +1,11 @@
-package net.patrykdobrowolski.bookshelf.adapter.exporter;
+package net.patrykdobrowolski.bookshelf.adapter.exporter.impl;
 
 import jakarta.inject.Named;
 import lombok.RequiredArgsConstructor;
+import net.patrykdobrowolski.bookshelf.adapter.exporter.ExportData;
+import net.patrykdobrowolski.bookshelf.adapter.exporter.ExportDataExtractor;
 import net.patrykdobrowolski.bookshelf.domain.exception.CatalogingSessionNotFoundException;
+import net.patrykdobrowolski.bookshelf.domain.exception.ExportException;
 import net.patrykdobrowolski.bookshelf.domain.model.cataloging.CatalogingSession;
 import net.patrykdobrowolski.bookshelf.domain.model.cataloging.DraftBook;
 import net.patrykdobrowolski.bookshelf.domain.model.value.BookDetails;
@@ -27,7 +30,7 @@ public class CatalogingSessionDataExtractor implements ExportDataExtractor {
     }
 
     @Override
-    public ExportData extract(UUID correlationKey) throws ExtractingDataException {
+    public ExportData extract(UUID correlationKey) throws ExportException.ExtractingExportDataException {
         try {
             CatalogingSession session = sessionService.findById(correlationKey);
             ExportData.ExportDataBuilder builder = ExportData.builder()
@@ -47,7 +50,7 @@ public class CatalogingSessionDataExtractor implements ExportDataExtractor {
             }
             return builder.build();
         } catch (CatalogingSessionNotFoundException e) {
-            throw new ExtractingDataException();
+            throw new ExportException.ExtractingExportDataException();
         }
     }
 }

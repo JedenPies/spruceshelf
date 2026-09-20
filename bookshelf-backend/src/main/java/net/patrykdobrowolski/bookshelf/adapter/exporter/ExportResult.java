@@ -1,9 +1,9 @@
 package net.patrykdobrowolski.bookshelf.adapter.exporter;
 
-import lombok.Builder;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
-@Builder
+@RequiredArgsConstructor(staticName = "of")
 @Getter
 public class ExportResult {
 

@@ -3,7 +3,7 @@ package net.patrykdobrowolski.bookshelf.adapter.rest;
 import lombok.RequiredArgsConstructor;
 import net.patrykdobrowolski.bookshelf.adapter.rest.dto.ExportDto;
 import net.patrykdobrowolski.bookshelf.adapter.rest.mapper.ExportDtoMapper;
-import net.patrykdobrowolski.bookshelf.domain.exception.ExportNotFoundException;
+import net.patrykdobrowolski.bookshelf.domain.exception.ExportException;
 import net.patrykdobrowolski.bookshelf.domain.model.export.Export;
 import net.patrykdobrowolski.bookshelf.service.ExportService;
 import org.springframework.core.io.ByteArrayResource;
@@ -27,13 +27,13 @@ public class ExportsResource {
     private final ExportDtoMapper exportDtoMapper;
 
     @GetMapping("{exportId}")
-    public ExportDto getExport(@PathVariable UUID exportId) throws ExportNotFoundException {
+    public ExportDto getExport(@PathVariable UUID exportId) throws ExportException.ExportNotFoundException {
         Export export = exportService.findExport(exportId);
         return exportDtoMapper.map(export);
     }
 
     @GetMapping("{exportId}/data")
-    public ResponseEntity<Resource> downloadExport(@PathVariable UUID exportId) throws ExportNotFoundException {
+    public ResponseEntity<Resource> downloadExport(@PathVariable UUID exportId) throws ExportException.ExportNotFoundException {
         Export export = exportService.findExport(exportId);
         ByteArrayResource resource = new ByteArrayResource(export.getData());
         return ResponseEntity.ok().header(

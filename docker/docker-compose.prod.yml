@@ -1,0 +1,38 @@
+services:
+  bookshelf-api-gateway:
+    container_name: prod-api-gateway
+
+  bookshelf-pg:
+    container_name: prod-bookshelf-pg
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - prod-pg-data:/var/lib/postgresql/data
+
+  bookshelf-redis:
+    container_name: prod-bookshelf-redis
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - prod-redis-data:/data
+
+  bookshelf-rabbitmq:
+    container_name: prod-bookshelf-rabbitmq
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
+    volumes:
+      - prod-rabbitmq-data:/var/lib/rabbitmq
+
+  bookshelf-backend:
+    container_name: prod-bookshelf-backend
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+
+  bookshelf-frontend:
+    container_name: prod-bookshelf-frontend
+
+volumes:
+  prod-pg-data:
+  prod-redis-data:
+  prod-rabbitmq-data:

@@ -21,15 +21,15 @@ public class GlobalExceptionHandler {
     @ResponseStatus(code = HttpStatus.NOT_FOUND)
     public void handleShareCodeNotFoundException() {}
 
-    @ExceptionHandler(ExportAlreadyRequestedException.class)
+    @ExceptionHandler(ExportException.ExportAlreadyRequestedException.class)
     @ResponseStatus(code = HttpStatus.CONFLICT)
     public void handleExportAlreadyRequestedException() {}
 
-    @ExceptionHandler(ExportNotRequestedException.class)
+    @ExceptionHandler(ExportException.ExportNotRequestedException.class)
     @ResponseStatus(code = HttpStatus.NOT_FOUND)
     public void exportNotRequestedException() {}
 
-    @ExceptionHandler(ExportNotFoundException.class)
+    @ExceptionHandler(ExportException.ExportNotFoundException.class)
     @ResponseStatus(code = HttpStatus.NOT_FOUND)
     public void exportNotFoundException() {}
 }
