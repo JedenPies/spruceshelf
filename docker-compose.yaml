@@ -1,54 +1,36 @@
 version: '3.8'
 
 services:
-
   bookshelf-api-gateway:
     build:
       context: bookshelf-api-gateway
       dockerfile: Dockerfile
-    container_name: bookshelf-api-gateway
     volumes:
       - ./.config/bookshelf-api-gateway/nginx:/etc/nginx/conf.d:ro
-      - ./.config/bookshelf-api-gateway/letsencrypt:/etc/letsencrypt:ro # <-- Podmontowanie certyfikatów
-      - ./.config/bookshelf-api-gateway/certbot-webroot:/var/www/certbot:ro
-    ports:
-      - "80:80"
-      - "443:443"
     networks:
-      - bookshelf-network
+      - gateway-network
+      - app-network
 
   bookshelf-pg:
     image: postgres:17-alpine
-    container_name: bookshelf-pg
     environment:
       POSTGRES_USER: ${POSTGRES_BOOKSHELF_USER}
       POSTGRES_PASSWORD: ${POSTGRES_BOOKSHELF_PASSWORD}
       POSTGRES_DB: ${POSTGRES_BOOKSHELF_DATABASE}
-    ports:
-      - "127.0.0.1:5432:5432"
-    volumes:
-      - bookshelf-pg-data:/var/lib/postgresql/data
     networks:
-      - bookshelf-network
+      - app-network
 
   bookshelf-redis:
     image: redis:alpine
-    container_name: bookshelf-redis
-    ports:
-      - "127.0.0.1:6379:6379"
     restart: unless-stopped
+    volumes:
+      - redis-data:/data
     networks:
-      - bookshelf-network
+      - app-network
 
   bookshelf-rabbitmq:
     image: rabbitmq:3-management
-    container_name: bookshelf-rabbitmq
     hostname: rabbitmq-node
-    ports:
-      - "127.0.0.1:5672:5672"
-      - "127.0.0.1:15672:15672"
-    volumes:
-      - rabbitmq-data:/var/lib/rabbitmq
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
@@ -59,15 +41,15 @@ services:
       timeout: 5s
       retries: 5
       start_period: 15s
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
     networks:
-      - bookshelf-network
+      - app-network
 
   bookshelf-backend:
     build:
       context: bookshelf-backend
       dockerfile: Dockerfile
-    image: bookshelf-backend
-    container_name: bookshelf-backend
     environment:
       - JAVA_TOOL_OPTIONS=-Xmx128m -Xms128m
       - POSTGRES_BOOKSHELF_HOST=bookshelf-pg
@@ -83,7 +65,7 @@ services:
       - RABBITMQ_PASSWORD=${RABBITMQ_DEFAULT_PASS}
       - GOOGLE_BOOKS_API_KEY=${GOOGLE_BOOKS_API_KEY}
     networks:
-      - bookshelf-network
+      - app-network
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:8081/actuator/health"]
       interval: 10s
@@ -93,19 +75,20 @@ services:
     depends_on:
       bookshelf-pg:
         condition: service_started
+      bookshelf-redis:
+        condition: service_started
+      bookshelf-rabbitmq:
+        condition: service_healthy
 
   bookshelf-frontend:
     build:
       context: bookshelf-frontend
       dockerfile: Dockerfile
-    image: bookshelf-frontend
-    container_name: bookshelf-frontend
     networks:
-      - bookshelf-network
-
-volumes:
-  bookshelf-pg-data:
-  rabbitmq-data:
+      - app-network
 
 networks:
-  bookshelf-network:
+  gateway-network:
+    external: true
+  app-network:
+    driver: bridge

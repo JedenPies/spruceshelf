@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  bookshelf-api-gateway:
+    container_name: staging-api-gateway
+
+  bookshelf-pg:
+    container_name: staging-bookshelf-pg
+    ports:
+      - "127.0.0.1:6432:5432" # Dostęp lokalny: 6432
+    volumes:
+      - staging-pg-data:/var/lib/postgresql/data
+
+  bookshelf-redis:
+    container_name: staging-bookshelf-redis
+    ports:
+      - "127.0.0.1:7379:6379" # Dostęp lokalny: 7379
+    volumes:
+      - staging-redis-data:/data
+
+  bookshelf-rabbitmq:
+    container_name: staging-bookshelf-rabbitmq
+    ports:
+      - "127.0.0.1:6672:5672"   # Dostęp lokalny: 6672
+      - "127.0.0.1:16672:15672" # Panel WWW RabbitMQ: 16672
+    volumes:
+      - staging-rabbitmq-data:/var/lib/rabbitmq
+
+  bookshelf-backend:
+    container_name: staging-bookshelf-backend
+    environment:
+      - SPRING_PROFILES_ACTIVE=stage
+
+  bookshelf-frontend:
+    container_name: staging-bookshelf-frontend
+
+volumes:
+  staging-pg-data:
+  staging-redis-data:
+  staging-rabbitmq-data:
