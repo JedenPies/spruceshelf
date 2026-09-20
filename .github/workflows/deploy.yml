@@ -1,22 +1,47 @@
 name: Deploy to OVH VPS
 
 on:
-  workflow_dispatch: 
+  workflow_dispatch:
     inputs:
-      branch:
-        description: 'Branch to deploy'
+      environment:
+        description: 'Wybierz środowisko do wdrożenia'
         required: true
-        default: master
+        type: choice
+        options:
+          - prod
+          - stage
+        default: prod
   push:
     branches:
       - master
+      - develop
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master'
-
     steps:
+      - name: Wybór parametrów środowiska
+        id: env_select
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            ENV="${{ github.event.inputs.environment }}"
+          elif [ "${{ github.ref_name }}" = "master" ]; then
+            ENV="prod"
+          else
+            ENV="stage"
+          fi
+
+          if [ "$ENV" = "prod" ]; then
+            echo "branch=master" >> $GITHUB_OUTPUT
+            echo "compose_file=docker/docker-compose.prod.yml" >> $GITHUB_OUTPUT
+            echo "target_dir=/home/ubuntu/app/spruceshelf.com" >> $GITHUB_OUTPUT
+          else
+            echo "branch=develop" >> $GITHUB_OUTPUT
+            echo "compose_file=docker/docker-compose.stage.yml" >> $GITHUB_OUTPUT
+            echo "target_dir=/home/ubuntu/app/staging.spruceshelf.com" >> $GITHUB_OUTPUT
+          fi
+          echo "selected_env=$ENV" >> $GITHUB_OUTPUT
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -25,10 +50,22 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script_stop: true
           script: |
-            TARGET_BRANCH="${{ github.event.inputs.branch || 'master' }}"
-            cd /home/ubuntu/app/bookshelf
-            git fetch origin
-            git checkout $TARGET_BRANCH
-            git pull origin $TARGET_BRANCH
-            docker compose up -d --build
+            TARGET_DIR="${{ steps.env_select.outputs.target_dir }}"
+            TARGET_BRANCH="${{ steps.env_select.outputs.branch }}"
+            COMPOSE_FILE="${{ steps.env_select.outputs.compose_file }}"
+
+            # Upewnij się, że wspólna sieć zewnętrzna istnieje
+            docker network inspect gateway-network >/dev/null 2>&1 || docker network create gateway-network
+
+            cd "$TARGET_DIR"
+
+            # Pobranie świeżego kodu
+            git fetch origin "$TARGET_BRANCH"
+            git checkout "$TARGET_BRANCH"
+            git reset --hard "origin/$TARGET_BRANCH"
+
+            # Wdrożenie stosu z plikiem środowiskowym
+            docker compose -f docker-compose.yaml -f "$COMPOSE_FILE" up -d --build
+
+            # Czyszczenie starych, wiszących obrazów
             docker image prune -f
