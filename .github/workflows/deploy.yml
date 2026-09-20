@@ -10,7 +10,7 @@ on:
         options:
           - prod
           - stage
-        default: prod
+        default: stage
   push:
     branches:
       - master
