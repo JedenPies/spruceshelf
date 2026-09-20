@@ -65,7 +65,7 @@ jobs:
             git reset --hard "origin/$TARGET_BRANCH"
 
             # Wdrożenie stosu z plikiem środowiskowym
-            docker compose -f docker-compose.yaml -f "$COMPOSE_FILE" up -d --build
+            docker compose -f docker-compose.yml -f "$COMPOSE_FILE" up -d --build
 
             # Czyszczenie starych, wiszących obrazów
             docker image prune -f
