@@ -82,6 +82,9 @@ services:
     build:
       context: bookshelf-frontend
       dockerfile: Dockerfile
+    depends_on:
+      bookshelf-backend:
+        condition: service_healthy
     networks:
       - app-network
 
