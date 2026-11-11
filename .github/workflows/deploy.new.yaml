@@ -74,7 +74,7 @@ jobs:
         script: |            
           TARGET_DIR="${{ vars.TARGET_DIR }}"
           COMPOSE_FILE="${{ vars.COMPOSE_FILE }}"
-          TARGET_BRANCH="${{ vars.TARGET_BRANCH }}"
+          TARGET_BRANCH="${{ github.event.inputs.branch }}"
           
           docker network inspect gateway-network >/dev/null 2>&1 || docker network create gateway-network
 
