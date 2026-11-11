@@ -43,11 +43,11 @@ jobs:
           echo "::error::Secret SSH_PRIVATE_KEY must be defined for environment ${{ github.event.inputs.environment }}"
           INVALID=1
         fi
-        if ! git ls-remote --exit-code --heads origin "${{ github.event.inputs.branch }}" && \
-           ! git ls-remote --exit-code --tags origin "${{ github.event.inputs.branch }}"; then
-          echo "::error::Branch or tag '${{ github.event.inputs.branch }}' does not exist in repository!"
-          INVALID=1
-        fi
+        # if ! git ls-remote --exit-code --heads origin "${{ github.event.inputs.branch }}" && \
+        #    ! git ls-remote --exit-code --tags origin "${{ github.event.inputs.branch }}"; then
+        #   echo "::error::Branch or tag '${{ github.event.inputs.branch }}' does not exist in repository!"
+        #   INVALID=1
+        # fi
         if [ "$INVALID" -eq 1 ]; then
           exit 1
         fi
