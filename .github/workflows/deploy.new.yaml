@@ -36,7 +36,7 @@ jobs:
           INVALID=1
         fi
         if [ -z "${{ secrets.SSH_USER }}" ]; then
-          echo "::error::Secret SSH_HOST must be defined for environment ${{ github.event.inputs.environment }}"
+          echo "::error::Secret SSH_USER must be defined for environment ${{ github.event.inputs.environment }}"
           INVALID=1
         fi
         if [ -z "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
