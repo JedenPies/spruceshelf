@@ -1,0 +1,87 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Choose environment'
+        required: true
+        type: environment
+      branch:
+        description: 'Choose branch to build from'
+        required: true
+        type: string
+        default: develop
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: 
+      name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment }}
+    steps:
+
+    - name: Input and configuration validation
+      run: |
+        INVALID=0
+        if [ -z "${{ vars.TARGET_DIR }}" ]; then
+          echo "::error::Variable TARGET_DIR must be defined for environment ${{ github.event.inputs.environment }}"
+          INVALID=1
+        fi
+        if [ -z "${{ vars.COMPOSE_FILE }}" ]; then
+          echo "::error::Variable COMPOSE_FILE must be defined for environment ${{ github.event.inputs.environment }}"
+          INVALID=1
+        fi
+        if [ -z "${{ secrets.SSH_HOST }}" ]; then
+          echo "::error::Secret SSH_HOST must be defined for environment ${{ github.event.inputs.environment }}"
+          INVALID=1
+        fi
+        if [ -z "${{ secrets.SSH_USER }}" ]; then
+          echo "::error::Secret SSH_HOST must be defined for environment ${{ github.event.inputs.environment }}"
+          INVALID=1
+        fi
+        if [ -z "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
+          echo "::error::Secret SSH_PRIVATE_KEY must be defined for environment ${{ github.event.inputs.environment }}"
+          INVALID=1
+        fi
+        if ! git ls-remote --exit-code --heads origin "${{ github.event.inputs.branch }}" && \
+           ! git ls-remote --exit-code --tags origin "${{ github.event.inputs.branch }}"; then
+          echo "::error::Branch or tag '${{ github.event.inputs.branch }}' does not exist in repository!"
+          INVALID=1
+        fi
+        if [ "$INVALID" -eq 1 ]; then
+          exit 1
+        fi
+        echo "Input and configuration valid"
+
+    - name: Code checkout
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.inputs.branch }}
+            
+    - name: Hello
+      run: |
+        echo "Hello World!"
+        echo "Branch: ${{ github.event.inputs.branch }}"
+        echo "Env: ${{ github.event.inputs.environment }}"
+
+    - name: Deploy via SSH
+      uses: appleboy/ssh-action@v1.2.0
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script_stop: true
+        script: |            
+          TARGET_DIR="${{ vars.TARGET_DIR }}"
+          COMPOSE_FILE="${{ vars.COMPOSE_FILE }}"
+          TARGET_BRANCH="${{ vars.TARGET_BRANCH }}"
+          
+          docker network inspect gateway-network >/dev/null 2>&1 || docker network create gateway-network
+
+          cd "$TARGET_DIR"
+          git fetch origin "$TARGET_BRANCH"
+          git checkout "$TARGET_BRANCH"
+          git reset --hard "origin/$TARGET_BRANCH"
+
+          docker compose -f docker-compose.yml -f "$COMPOSE_FILE" up -d --build
+          docker image prune -f
