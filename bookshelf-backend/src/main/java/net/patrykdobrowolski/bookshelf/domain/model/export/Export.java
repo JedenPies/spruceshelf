@@ -2,6 +2,7 @@ package net.patrykdobrowolski.bookshelf.domain.model.export;
 
 import lombok.Builder;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import net.patrykdobrowolski.bookshelf.domain.AggregateRoot;
 import net.patrykdobrowolski.bookshelf.domain.exception.ExportException;
 import net.patrykdobrowolski.bookshelf.domain.model.command.ExportCommand;
@@ -16,6 +17,7 @@ import java.util.UUID;
 
 @Builder
 @Getter
+@Slf4j
 public class Export extends AggregateRoot {
 
     private UUID id;
@@ -50,7 +52,10 @@ public class Export extends AggregateRoot {
     }
 
     public void request(ExportCommand command) throws ExportException.ExportAlreadyRequestedException {
-        if (ExportStatus.REQUESTED.equals(status)) throw new ExportException.ExportAlreadyRequestedException();
+        if (ExportStatus.REQUESTED.equals(status) || ExportStatus.PROCESSING.equals(status)) {
+            log.warn("Export with correlation key {} already requested", command.getCorrelationKey());
+            throw new ExportException.ExportAlreadyRequestedException();
+        }
         this.format = command.getFormat();
         this.status = ExportStatus.REQUESTED;
         this.type = command.getType();

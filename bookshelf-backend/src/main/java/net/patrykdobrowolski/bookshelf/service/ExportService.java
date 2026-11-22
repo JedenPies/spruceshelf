@@ -3,6 +3,7 @@ package net.patrykdobrowolski.bookshelf.service;
 import jakarta.inject.Named;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.patrykdobrowolski.bookshelf.domain.exception.ExportException;
 import net.patrykdobrowolski.bookshelf.domain.model.command.ExportCommand;
 import net.patrykdobrowolski.bookshelf.domain.model.export.Export;
@@ -16,6 +17,7 @@ import java.util.UUID;
 
 @Named
 @RequiredArgsConstructor
+@Slf4j
 public class ExportService implements ExportServicePort {
 
     private final ExportRepositoryPort exportRepository;
@@ -26,7 +28,10 @@ public class ExportService implements ExportServicePort {
     public Export requestExport(ExportCommand command) throws ExportException.ExportAlreadyRequestedException, ExportException.ExportNotFoundException {
         Optional<Export> existingExport = exportRepository.findByTypeAndCorrelationKey(command.getType(), command.getCorrelationKey());
         if (existingExport.isPresent()) {
-            if (!existingExport.get().isComplete()) throw new ExportException.ExportAlreadyRequestedException();
+            if (!existingExport.get().isComplete()) {
+                log.warn("Export with correlation key {} already requested", command.getCorrelationKey());
+                throw new ExportException.ExportAlreadyRequestedException();
+            }
         }
         Export export = existingExport.orElseGet(() -> Export.createNew(command));
         export.request(command);
