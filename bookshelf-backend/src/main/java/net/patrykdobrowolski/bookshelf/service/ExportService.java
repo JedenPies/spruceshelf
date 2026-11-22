@@ -12,7 +12,6 @@ import net.patrykdobrowolski.bookshelf.domain.port.ExportRepositoryPort;
 import net.patrykdobrowolski.bookshelf.domain.port.ExportServicePort;
 import org.springframework.context.ApplicationEventPublisher;
 
-import java.util.Optional;
 import java.util.UUID;
 
 @Named
@@ -26,14 +25,8 @@ public class ExportService implements ExportServicePort {
     @Transactional
     @Override
     public Export requestExport(ExportCommand command) throws ExportException.ExportAlreadyRequestedException, ExportException.ExportNotFoundException {
-        Optional<Export> existingExport = exportRepository.findByTypeAndCorrelationKey(command.getType(), command.getCorrelationKey());
-        if (existingExport.isPresent()) {
-            if (!existingExport.get().isComplete()) {
-                log.warn("Export with correlation key {} already requested", command.getCorrelationKey());
-                throw new ExportException.ExportAlreadyRequestedException();
-            }
-        }
-        Export export = existingExport.orElseGet(() -> Export.createNew(command));
+        Export export = exportRepository.findByTypeAndCorrelationKey(command.getType(), command.getCorrelationKey())
+                .orElseGet(() -> Export.createNew(command));
         export.request(command);
         export.publishEvents(eventPublisher::publishEvent);
         return exportRepository.save(export);

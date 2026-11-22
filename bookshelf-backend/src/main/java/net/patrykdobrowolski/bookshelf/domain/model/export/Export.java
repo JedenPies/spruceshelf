@@ -47,7 +47,7 @@ public class Export extends AggregateRoot {
                 .type(command.getType())
                 .correlationKey(command.getCorrelationKey())
                 .createdAt(Instant.now())
-                .status(ExportStatus.REQUESTED)
+                .status(ExportStatus.INIT)
                 .build();
     }
 
@@ -62,10 +62,6 @@ public class Export extends AggregateRoot {
         this.correlationKey = command.getCorrelationKey();
         this.createdAt = Instant.now();
         registerEvent(ExportRequestedEvent.of(this));
-    }
-
-    public boolean isComplete() {
-        return ExportStatus.SUCCEED.equals(status) || ExportStatus.FAILED.equals(status);
     }
 
     public void begin() {
