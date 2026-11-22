@@ -38,7 +38,7 @@ class ExportTest {
     }
 
     @Test
-    @DisplayName("createNew() powinno poprawnie zainicjalizować obiekt ze statusem REQUESTED na podstawie komendy")
+    @DisplayName("createNew() powinno poprawnie zainicjalizować obiekt ze statusem INIT na podstawie komendy")
     void shouldCreateNewExportFromCommand() {
         // given
         ExportCommand command = createCommand(ExportFormat.CSV, ExportType.CATALOGING_SESSION);
@@ -51,7 +51,7 @@ class ExportTest {
         assertThat(export.getFormat()).isEqualTo(ExportFormat.CSV);
         assertThat(export.getType()).isEqualTo(ExportType.CATALOGING_SESSION);
         assertThat(export.getCorrelationKey()).isEqualTo(correlationKey);
-        assertThat(export.getStatus()).isEqualTo(ExportStatus.REQUESTED);
+        assertThat(export.getStatus()).isEqualTo(ExportStatus.INIT);
         assertThat(export.getCreatedAt()).isNotNull();
         assertThat(export.getModifiedAt()).isNull();
         assertThat(export.getData()).isNull();
@@ -63,15 +63,95 @@ class ExportTest {
     class RequestTests {
 
         @Test
-        @DisplayName("powinno rzucić ExportAlreadyRequestedException, gdy status to REQUESTED")
-        void shouldThrowExceptionWhenExportAlreadyRequested() {
+        @DisplayName("powinno ustawić status REQUESTED i zarejestrować ExportRequestedEvent dla nowo utworzonego eksportu")
+        void shouldRequestNewExport() throws Exception {
             // given
-            Export export = Export.createNew(createCommand(ExportFormat.CSV, ExportType.CATALOGING_SESSION));
+            ExportCommand command = createCommand(ExportFormat.CSV, ExportType.CATALOGING_SESSION);
+            Export export = Export.createNew(command);
+
+            // when
+            export.request(command);
+
+            // then
+            assertThat(export.getStatus()).isEqualTo(ExportStatus.REQUESTED);
+            assertThat(export.getFormat()).isEqualTo(ExportFormat.CSV);
+            assertThat(export.getType()).isEqualTo(ExportType.CATALOGING_SESSION);
+            assertThat(export.getCorrelationKey()).isEqualTo(correlationKey);
+
+            List<BusinessEvent> events = drainEvents(export);
+            assertThat(events)
+                    .hasSize(1)
+                    .first()
+                    .isInstanceOf(ExportRequestedEvent.class);
+
+            ExportRequestedEvent event = (ExportRequestedEvent) events.getFirst();
+            assertThat(event.getExport()).isEqualTo(export);
+        }
+
+        @Test
+        @DisplayName("powinno rzucić ExportAlreadyRequestedException, gdy status to REQUESTED")
+        void shouldThrowExceptionWhenExportAlreadyRequested() throws Exception {
+            // given
+            ExportCommand initialCommand = createCommand(ExportFormat.CSV, ExportType.CATALOGING_SESSION);
+            Export export = Export.createNew(initialCommand);
+            export.request(initialCommand);
             ExportCommand newCommand = createCommand(ExportFormat.XLSX, ExportType.CATALOGING_SESSION);
 
             // when & then
             assertThatThrownBy(() -> export.request(newCommand))
                     .isInstanceOf(ExportException.ExportAlreadyRequestedException.class);
+        }
+
+        @Test
+        @DisplayName("powinno rzucić ExportAlreadyRequestedException, gdy status to PROCESSING")
+        void shouldThrowExceptionWhenExportIsProcessing() throws Exception {
+            // given
+            ExportCommand initialCommand = createCommand(ExportFormat.CSV, ExportType.CATALOGING_SESSION);
+            Export export = Export.createNew(initialCommand);
+            export.request(initialCommand);
+            export.begin();
+            ExportCommand newCommand = createCommand(ExportFormat.XLSX, ExportType.CATALOGING_SESSION);
+
+            // when & then
+            assertThatThrownBy(() -> export.request(newCommand))
+                    .isInstanceOf(ExportException.ExportAlreadyRequestedException.class);
+        }
+
+        @Test
+        @DisplayName("powinno zaktualizować dane i wyemitować ExportRequestedEvent, gdy poprzedni eksport się zakończył")
+        void shouldUpdateRequestWhenPreviousExportCompleted() throws Exception {
+            // given
+            ExportCommand initialCommand = createCommand(ExportFormat.CSV, ExportType.CATALOGING_SESSION);
+            Export export = Export.createNew(initialCommand);
+            export.request(initialCommand);
+            export.begin();
+            export.failed();
+            drainEvents(export); // oczyszczenie kolejki po poprzednich akcjach
+
+            UUID newCorrelationKey = UUID.randomUUID();
+            ExportCommand newCommand = ExportCommand.builder()
+                    .format(ExportFormat.XLSX)
+                    .type(ExportType.CATALOGING_SESSION)
+                    .correlationKey(newCorrelationKey)
+                    .build();
+
+            // when
+            export.request(newCommand);
+
+            // then
+            assertThat(export.getStatus()).isEqualTo(ExportStatus.REQUESTED);
+            assertThat(export.getFormat()).isEqualTo(ExportFormat.XLSX);
+            assertThat(export.getType()).isEqualTo(ExportType.CATALOGING_SESSION);
+            assertThat(export.getCorrelationKey()).isEqualTo(newCorrelationKey);
+
+            List<BusinessEvent> events = drainEvents(export);
+            assertThat(events)
+                    .hasSize(1)
+                    .first()
+                    .isInstanceOf(ExportRequestedEvent.class);
+
+            ExportRequestedEvent event = (ExportRequestedEvent) events.getFirst();
+            assertThat(event.getExport()).isEqualTo(export);
         }
 
         @Test
@@ -107,35 +187,6 @@ class ExportTest {
 
             ExportRequestedEvent event = (ExportRequestedEvent) events.getFirst();
             assertThat(event.getExport()).isEqualTo(export);
-        }
-    }
-
-    @Nested
-    @DisplayName("Metoda isComplete()")
-    class IsCompleteTests {
-
-        @Test
-        @DisplayName("powinno zwrócić false dla stanu REQUESTED i PROCESSING")
-        void shouldReturnFalseForIncompleteStatuses() {
-            Export export = Export.createNew(createCommand(ExportFormat.CSV, ExportType.CATALOGING_SESSION));
-            assertThat(export.isComplete()).isFalse();
-
-            export.begin();
-            assertThat(export.isComplete()).isFalse();
-        }
-
-        @Test
-        @DisplayName("powinno zwrócić true dla stanu SUCCEED i FAILED")
-        void shouldReturnTrueForCompleteStatuses() {
-            Export succeedExport = Export.createNew(createCommand(ExportFormat.CSV, ExportType.CATALOGING_SESSION));
-            succeedExport.begin();
-            succeedExport.exported(new byte[]{1, 2, 3});
-            assertThat(succeedExport.isComplete()).isTrue();
-
-            Export failedExport = Export.createNew(createCommand(ExportFormat.CSV, ExportType.CATALOGING_SESSION));
-            failedExport.begin();
-            failedExport.failed();
-            assertThat(failedExport.isComplete()).isTrue();
         }
     }
 

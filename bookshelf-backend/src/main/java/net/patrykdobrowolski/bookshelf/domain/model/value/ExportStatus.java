@@ -2,5 +2,5 @@ package net.patrykdobrowolski.bookshelf.domain.model.value;
 
 public enum ExportStatus {
 
-    REQUESTED, PROCESSING, SUCCEED, FAILED
+    INIT, REQUESTED, PROCESSING, SUCCEED, FAILED
 }
